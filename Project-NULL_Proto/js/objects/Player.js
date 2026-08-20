@@ -20,7 +20,9 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset(0, TILE);
     this.setCollideWorldBounds(true);
 
-    this.speed = 140;
+    this.speed = 140; // (참고용, 실제 이동은 stepDuration 기준 트윈으로 처리)
+    this.stepDuration = 140; // 1칸 이동에 걸리는 시간(ms)
+    this.isStepping = false;
     this.facing = 'down'; // up, down, left, right
     this.playerName = name;
     this.health = 100;
@@ -31,23 +33,47 @@ class Player extends Phaser.Physics.Arcade.Sprite {
 
   update() {
     const input = window.InputState;
-    let vx = input.moveX;
-    let vy = input.moveY;
+    let dx = input.moveX;
+    let dy = input.moveY;
 
-    // 방향 정규화 (대각선 스피드 보정) - 단, 이동은 4방향으로 스냅
-    if (Math.abs(vx) > Math.abs(vy)) {
-      vy = 0;
-      this.facing = vx > 0 ? 'right' : vx < 0 ? 'left' : this.facing;
-    } else if (vy !== 0) {
-      vx = 0;
-      this.facing = vy > 0 ? 'down' : 'up';
+    // 대각선 입력 방지: 좌우 우선
+    if (dx !== 0 && dy !== 0) dy = 0;
+
+    if (dx !== 0 || dy !== 0) {
+      this.facing = dx > 0 ? 'right' : dx < 0 ? 'left' : dy > 0 ? 'down' : 'up';
     }
 
-    this.setVelocity(vx * this.speed, vy * this.speed);
+    if (!this.isStepping && (dx !== 0 || dy !== 0)) {
+      this.stepMove(dx, dy);
+    }
 
     if (input.attackPressed && !this.attackCooldown) {
       this.performAttack();
     }
+  }
+
+  // 좀비는 한 칸(TILE)씩만 이동 - 좀비고 스타일의 그리드 이동
+  stepMove(dx, dy) {
+    const targetX = this.x + dx * TILE;
+    const targetY = this.y + dy * TILE;
+
+    // 맵 경계를 벗어나는 이동은 무시 (body 하단 히트박스 기준)
+    const b = this.scene.physics.world.bounds;
+    const halfW = TILE / 2;
+    if (targetX - halfW < b.x || targetX + halfW > b.right) return;
+    if (targetY < b.y || targetY + TILE > b.bottom) return;
+
+    this.isStepping = true;
+    this.setVelocity(0, 0);
+    this.scene.tweens.add({
+      targets: this,
+      x: targetX,
+      y: targetY,
+      duration: this.stepDuration,
+      onComplete: () => {
+        this.isStepping = false;
+      }
+    });
   }
 
   // 일반 좀비(주인공) 공격: 바라보는 방향 바로 앞 1칸만 타격 (구 나무 막대기 청년 방식)

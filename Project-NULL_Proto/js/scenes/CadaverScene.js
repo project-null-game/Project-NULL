@@ -36,7 +36,12 @@ class CadaverScene extends Phaser.Scene {
     this.buildBoundaryWalls(roomW, roomH);
 
     // UI 오버레이 씬 실행
-    this.scene.launch('UIScene', { player: this.player, saveData: this.saveData });
+    this.scene.launch('UIScene', {
+      player: this.player,
+      saveData: this.saveData,
+      targetX: this.exitZone.x,
+      targetY: this.exitZone.y
+    });
 
     // 오프닝 방송
     this.showOpeningBroadcast();

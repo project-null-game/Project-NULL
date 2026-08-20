@@ -34,10 +34,16 @@ class MarketScene extends Phaser.Scene {
       fontFamily: 'sans-serif', fontSize: '18px', color: '#ddd', align: 'center'
     }).setOrigin(0.5);
 
-    // 맵 경계 벽 (World bounds와 별개로 이중 안전장치) - 플레이어가 맵 밖으로 나가지 못하게 막음
+    // 맵 경계 벽 (World bounds와 별개로 이중 안전장치) - 플레이어/적 모두 밖으로 못 나가게 막음
     this.buildBoundaryWalls(MAP_SIZE, MAP_SIZE);
+    this.physics.add.collider(this.enemies, this.walls);
 
-    this.scene.launch('UIScene', { player: this.player, saveData: this.saveData });
+    this.scene.launch('UIScene', {
+      player: this.player,
+      saveData: this.saveData,
+      targetX: this.arrivalZone.x,
+      targetY: this.arrivalZone.y
+    });
 
     // 체크포인트 저장
     this.saveData.currentScene = 'MarketScene';
