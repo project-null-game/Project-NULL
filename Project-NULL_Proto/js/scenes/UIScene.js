@@ -44,7 +44,7 @@ class UIScene extends Phaser.Scene {
 
   // ---------- 왼쪽 아래: 버전 표시 ----------
   buildVersionLabel(height) {
-    this.add.text(10, height - 8, 'Prototype V1.0.5', {
+    this.add.text(10, height - 8, 'Prototype V1.0.6', {
       fontFamily: 'sans-serif', fontSize: '12px', color: '#666666'
     }).setOrigin(0, 1).setScrollFactor(0).setDepth(200);
   }
@@ -178,15 +178,22 @@ class UIScene extends Phaser.Scene {
 
   // ---------- 오른쪽 아래: 공격 버튼 ----------
   buildAttackButton(width, height) {
-    const btn = this.add.circle(width - 70, height - 90, 40, 0x883333, 0.8)
+    const btn = this.add.circle(width - 70, height - 90, 46, 0x883333, 0.8)
       .setScrollFactor(0).setDepth(200).setInteractive();
     this.add.text(width - 70, height - 90, '공격', {
       fontFamily: 'sans-serif', fontSize: '14px', color: '#fff'
     }).setOrigin(0.5).setScrollFactor(0).setDepth(201);
 
-    btn.on('pointerdown', () => (window.InputState.attackPressed = true));
+    // 터치 좌표가 미세하게 흔들리면 pointerout이 바로 발생해 attackPressed가
+    // 너무 빨리 꺼져버려 모바일에서 공격이 씹히는 문제가 있었음.
+    // pointerdown에서 바로 공격을 발동시켜 프레임 타이밍에 의존하지 않게 함.
+    btn.on('pointerdown', () => {
+      window.InputState.attackPressed = true;
+      if (this.player && !this.player.attackCooldown) {
+        this.player.performAttack();
+      }
+    });
     btn.on('pointerup', () => (window.InputState.attackPressed = false));
-    btn.on('pointerout', () => (window.InputState.attackPressed = false));
   }
 
   // ---------- 오른쪽 위: 설정 ----------

@@ -99,24 +99,24 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.showAttackDebug(tiles);
   }
 
-  // 플레이어 타일 좌표 기준, 바라보는 방향 바로 앞 1칸 좌표 계산
+  // 플레이어 타일 좌표 기준, 본인 칸 + 바라보는 방향 바로 앞 1칸 좌표 계산
   getAttackTiles() {
     const tx = Math.floor(this.x / TILE);
     const ty = Math.floor(this.y / TILE);
-    let tiles = [];
+    let tiles = [[tx, ty]]; // 본인이 서 있는 칸도 공격 판정에 포함
 
     switch (this.facing) {
       case 'up':
-        tiles = [[tx, ty - 1]];
+        tiles.push([tx, ty - 1]);
         break;
       case 'down':
-        tiles = [[tx, ty + 1]];
+        tiles.push([tx, ty + 1]);
         break;
       case 'left':
-        tiles = [[tx - 1, ty]];
+        tiles.push([tx - 1, ty]);
         break;
       case 'right':
-        tiles = [[tx + 1, ty]];
+        tiles.push([tx + 1, ty]);
         break;
     }
     return tiles;

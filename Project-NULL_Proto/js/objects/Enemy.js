@@ -16,15 +16,37 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.attackCooldown = false;
     this.facing = 'down';
     this.isStepping = false;
-    this.stepDuration = type === 'stick' ? 220 : 320; // 나무 막대기 청년이 좀 더 빠르게 추격
+    this.stepDuration = type === 'stick' ? 320 : 450; // 이동속도 하향 (기존보다 느리게 추격)
 
     // stick: 앞줄 3칸 키패드 스윙(구 카다베르 방식) / rock: 원거리 5칸 직선 투척
     this.attackRange = type === 'stick' ? 1 : 5; // stick의 range는 "정면 거리 1칸" 기준
-    this.attackDamage = type === 'stick' ? 15 : 10;
+    this.attackDamage = type === 'stick' ? 8 : 5; // 공격력 하향
+
+    // 체력바 (월드 좌표에 붙어서 항상 머리 위에 표시)
+    this.hpBarWidth = 28;
+    this.hpBarBg = scene.add.rectangle(this.x - this.hpBarWidth / 2, this.y - 10, this.hpBarWidth, 5, 0x330000)
+      .setOrigin(0, 0.5).setDepth(150);
+    this.hpBarFill = scene.add.rectangle(this.x - this.hpBarWidth / 2, this.y - 10, this.hpBarWidth, 5, 0xdd3333)
+      .setOrigin(0, 0.5).setDepth(151);
+
+    this.on('destroy', () => {
+      this.hpBarBg.destroy();
+      this.hpBarFill.destroy();
+    });
+  }
+
+  updateHealthBar() {
+    const barY = this.y - 10;
+    this.hpBarBg.setPosition(this.x - this.hpBarWidth / 2, barY);
+    this.hpBarFill.setPosition(this.x - this.hpBarWidth / 2, barY);
+    const ratio = Math.max(0, this.health / this.maxHealth);
+    this.hpBarFill.width = this.hpBarWidth * ratio;
   }
 
   update(player) {
     if (!this.active || this.health <= 0) return;
+
+    this.updateHealthBar();
 
     const myTx = Math.floor(this.x / TILE);
     const myTy = Math.floor(this.y / TILE);
@@ -124,7 +146,7 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
       this.resolveWindupAttack(player, telegraphTiles, myTx, myTy);
     });
 
-    const cd = this.type === 'stick' ? 700 : 1200;
+    const cd = this.type === 'stick' ? 1400 : 2000; // 공격속도 하향 (쿨다운 증가)
     this.scene.time.delayedCall(windup + cd, () => (this.attackCooldown = false));
   }
 
