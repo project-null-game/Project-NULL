@@ -44,7 +44,7 @@ class UIScene extends Phaser.Scene {
 
   // ---------- 왼쪽 아래: 버전 표시 ----------
   buildVersionLabel(height) {
-    this.add.text(10, height - 8, 'Prototype V1.0.3', {
+    this.add.text(10, height - 8, 'Prototype V1.0.4', {
       fontFamily: 'sans-serif', fontSize: '12px', color: '#666666'
     }).setOrigin(0, 1).setScrollFactor(0).setDepth(200);
   }
@@ -112,32 +112,67 @@ class UIScene extends Phaser.Scene {
     this.healthBarFill.width = this.maxBarWidth * ratio;
   }
 
-  // ---------- 왼쪽 아래: 방향키 ----------
+  // ---------- 왼쪽 아래: 조이스틱 방식 이동 ----------
   buildDPad(width, height) {
-    const baseX = 90, baseY = height - 90, r = 34, gap = 42;
-    const dirs = [
-      { key: 'up', dx: 0, dy: -gap, vx: 0, vy: -1 },
-      { key: 'down', dx: 0, dy: gap, vx: 0, vy: 1 },
-      { key: 'left', dx: -gap, dy: 0, vx: -1, vy: 0 },
-      { key: 'right', dx: gap, dy: 0, vx: 1, vy: 0 }
-    ];
+    const baseX = 110, baseY = height - 110;
+    const baseRadius = 65;
+    const knobRadius = 32;
 
-    dirs.forEach(d => {
-      const btn = this.add.circle(baseX + d.dx, baseY + d.dy, r * 0.5, 0x444444, 0.7)
-        .setScrollFactor(0).setDepth(200).setInteractive();
+    const base = this.add.circle(baseX, baseY, baseRadius, 0x444444, 0.35)
+      .setScrollFactor(0).setDepth(200).setStrokeStyle(2, 0xffffff, 0.25);
+    const knob = this.add.circle(baseX, baseY, knobRadius, 0x777777, 0.85)
+      .setScrollFactor(0).setDepth(201).setStrokeStyle(2, 0xffffff, 0.5);
 
-      btn.on('pointerdown', () => {
-        window.InputState.moveX = d.vx;
-        window.InputState.moveY = d.vy;
-      });
-      btn.on('pointerup', () => {
+    // 실제 터치 인식 영역은 베이스보다 더 크게 잡아 손가락이 살짝 벗어나도 잘 잡히게 함
+    const hitArea = this.add.circle(baseX, baseY, baseRadius + 30, 0x000000, 0.001)
+      .setScrollFactor(0).setDepth(202).setInteractive();
+
+    let dragging = false;
+
+    const applyDirection = (dx, dy) => {
+      // 이동은 좀비(플레이어)와 동일한 "한 칸씩" 규칙을 그대로 따름 - 조이스틱은 방향만 알려줌
+      if (Math.abs(dx) < 12 && Math.abs(dy) < 12) {
         window.InputState.moveX = 0;
         window.InputState.moveY = 0;
-      });
-      btn.on('pointerout', () => {
-        window.InputState.moveX = 0;
+        return;
+      }
+      if (Math.abs(dx) > Math.abs(dy)) {
+        window.InputState.moveX = dx > 0 ? 1 : -1;
         window.InputState.moveY = 0;
-      });
+      } else {
+        window.InputState.moveX = 0;
+        window.InputState.moveY = dy > 0 ? 1 : -1;
+      }
+    };
+
+    const updateKnob = (pointer) => {
+      const dx = pointer.x - baseX;
+      const dy = pointer.y - baseY;
+      const dist = Math.min(baseRadius, Math.hypot(dx, dy));
+      const angle = Math.atan2(dy, dx);
+      knob.setPosition(baseX + Math.cos(angle) * dist, baseY + Math.sin(angle) * dist);
+      applyDirection(dx, dy);
+    };
+
+    const resetKnob = () => {
+      dragging = false;
+      knob.setPosition(baseX, baseY);
+      window.InputState.moveX = 0;
+      window.InputState.moveY = 0;
+    };
+
+    hitArea.on('pointerdown', (pointer) => {
+      dragging = true;
+      updateKnob(pointer);
+    });
+    this.input.on('pointermove', (pointer) => {
+      if (dragging) updateKnob(pointer);
+    });
+    this.input.on('pointerup', () => {
+      if (dragging) resetKnob();
+    });
+    this.input.on('pointerupoutside', () => {
+      if (dragging) resetKnob();
     });
   }
 

@@ -12,7 +12,8 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.maxHealth = 30;
     this.attackCooldown = false;
     this.facing = 'down';
-    this.chaseSpeed = type === 'stick' ? 95 : 70; // 나무 막대기 청년이 좀 더 공격적으로 추격
+    this.isStepping = false;
+    this.stepDuration = type === 'stick' ? 220 : 320; // 나무 막대기 청년이 좀 더 빠르게 추격
 
     // stick: 앞줄 3칸 키패드 스윙(구 카다베르 방식) / rock: 원거리 5칸 직선 투척
     this.attackRange = type === 'stick' ? 1 : 5; // stick의 range는 "정면 거리 1칸" 기준
@@ -49,34 +50,50 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     if (inRange) {
       // 사거리 안에 들어오면 멈추고 공격 시도 (쿨다운 중이 아닐 때만)
-      this.setVelocity(0, 0);
       if (!this.attackCooldown) {
         if (this.type === 'stick') this.performAttack(player, 'stick');
         else this.performAttack(player, 'rock', myTy === pTy ? 'row' : 'col', myTx, myTy, pTx, pTy);
       }
-    } else {
-      // 사거리 밖이면 플레이어를 향해 추격 (인간이 좀비를 잡으러 옴)
+    } else if (!this.isStepping) {
+      // 사거리 밖이면 플레이어를 향해 한 칸씩 추격 (좀비와 동일한 이동 법칙)
       this.chaseTowards(player);
     }
   }
 
-  // 플레이어 방향으로 4방향 이동 (대각선 없이 더 큰 축을 우선 이동)
+  // 플레이어 방향으로 한 칸(TILE)씩 이동 - 좀비(플레이어)와 동일한 그리드 이동 규칙
   chaseTowards(player) {
     const dx = player.x - this.x;
     const dy = player.y - this.y;
 
-    if (Math.abs(dx) < 4 && Math.abs(dy) < 4) {
-      this.setVelocity(0, 0);
-      return;
-    }
+    if (Math.abs(dx) < TILE / 2 && Math.abs(dy) < TILE / 2) return;
 
+    let stepX = 0, stepY = 0;
     if (Math.abs(dx) > Math.abs(dy)) {
-      this.setVelocity(dx > 0 ? this.chaseSpeed : -this.chaseSpeed, 0);
+      stepX = dx > 0 ? 1 : -1;
       this.facing = dx > 0 ? 'right' : 'left';
     } else {
-      this.setVelocity(0, dy > 0 ? this.chaseSpeed : -this.chaseSpeed);
+      stepY = dy > 0 ? 1 : -1;
       this.facing = dy > 0 ? 'down' : 'up';
     }
+
+    const targetX = this.x + stepX * TILE;
+    const targetY = this.y + stepY * TILE;
+
+    const b = this.scene.physics.world.bounds;
+    const halfW = TILE / 2;
+    if (targetX - halfW < b.x || targetX + halfW > b.right) return;
+    if (targetY < b.y || targetY + TILE > b.bottom) return;
+
+    this.isStepping = true;
+    this.scene.tweens.add({
+      targets: this,
+      x: targetX,
+      y: targetY,
+      duration: this.stepDuration,
+      onComplete: () => {
+        this.isStepping = false;
+      }
+    });
   }
 
   // 바라보는 방향 앞줄 3칸(키패드 형태) 좌표 - 구 카다베르 공격 로직 재사용
