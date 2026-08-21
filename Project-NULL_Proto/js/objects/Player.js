@@ -9,9 +9,20 @@ window.InputState = {
 
 const TILE = 32; // 히트박스 기준 1칸 크기
 
+// 모든 캐릭터(플레이어/적)가 같은 절대 격자 위상에서 움직이도록 스폰 좌표를 스냅.
+// x는 타일 중앙(k*TILE + TILE/2), y는 타일 상단(k*TILE)에 맞춤 -
+// 이게 안 맞으면 서로 다른 위상으로 32px씩 움직여서 "같은 칸"이 영원히 안 겹칠 수 있음.
+function snapToTileGrid(x, y) {
+  return {
+    x: Math.round((x - TILE / 2) / TILE) * TILE + TILE / 2,
+    y: Math.round(y / TILE) * TILE
+  };
+}
+
 class Player extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, name = '이름 없는 좀비') {
-    super(scene, x, y, texture);
+    const snapped = snapToTileGrid(x, y);
+    super(scene, snapped.x, snapped.y, texture);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 

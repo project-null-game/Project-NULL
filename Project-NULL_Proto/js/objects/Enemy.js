@@ -1,9 +1,12 @@
 class Enemy extends Phaser.Physics.Arcade.Sprite {
   constructor(scene, x, y, texture, type) {
-    super(scene, x, y, texture);
+    // 플레이어와 같은 절대 격자 위상으로 스폰 (안 그러면 서로 다른 칸 기준으로 움직여서 판정이 안 맞음)
+    const snapped = snapToTileGrid(x, y);
+    super(scene, snapped.x, snapped.y, texture);
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
+    // 플레이어와 동일하게 하단 32x32만 히트박스로 사용
     this.body.setSize(TILE, TILE);
     this.body.setOffset(0, TILE);
 
@@ -49,10 +52,9 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (inRange) {
-      // 사거리 안에 들어오면 멈추고 공격 시도 (쿨다운 중이 아닐 때만)
+      // 사거리 안에 들어오면 멈추고 공격 예고 시작 (쿨다운 중이 아닐 때만)
       if (!this.attackCooldown) {
-        if (this.type === 'stick') this.performAttack(player, 'stick');
-        else this.performAttack(player, 'rock', myTy === pTy ? 'row' : 'col', myTx, myTy, pTx, pTy);
+        this.startWindup(player, myTx, myTy);
       }
     } else if (!this.isStepping) {
       // 사거리 밖이면 플레이어를 향해 한 칸씩 추격 (좀비와 동일한 이동 법칙)
@@ -106,19 +108,59 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  performAttack(player, kind, axis, myTx, myTy, pTx, pTy) {
-    this.attackCooldown = true;
-    const cd = kind === 'stick' ? 700 : 1200;
-    this.scene.time.delayedCall(cd, () => (this.attackCooldown = false));
+  // 공격 예고(윈드업): 잠깐 기다렸다가 실제로 타격 판정. 나무 막대기는 맞을 칸을 빨간색으로 미리 표시.
+  startWindup(player, myTx, myTy) {
+    this.attackCooldown = true; // 윈드업 중 + 이후 쿨다운까지 통틀어 재발동 방지
 
-    if (kind === 'stick') {
-      // 3칸 스윙: 즉시 타격
-      player.takeDamage(this.attackDamage);
-      this.flashAttack();
-    } else {
-      // 원거리: 투사체를 직선으로 날림 (간단 트윈 처리)
-      this.throwRock(player, axis, myTx, myTy, pTx, pTy);
+    let telegraphTiles = [];
+    const windup = this.type === 'stick' ? 450 : 350;
+
+    if (this.type === 'stick') {
+      telegraphTiles = this.getKeypadTiles(myTx, myTy);
+      this.showTelegraph(telegraphTiles, windup);
     }
+
+    this.scene.time.delayedCall(windup, () => {
+      this.resolveWindupAttack(player, telegraphTiles, myTx, myTy);
+    });
+
+    const cd = this.type === 'stick' ? 700 : 1200;
+    this.scene.time.delayedCall(windup + cd, () => (this.attackCooldown = false));
+  }
+
+  // 윈드업이 끝난 시점에 실제로 맞았는지 재확인 (그 사이 플레이어가 피했을 수 있음)
+  resolveWindupAttack(player, telegraphTiles, myTx, myTy) {
+    if (!this.active || this.health <= 0) return;
+
+    const pTx = Math.floor(player.x / TILE);
+    const pTy = Math.floor(player.y / TILE);
+
+    if (this.type === 'stick') {
+      const hit = telegraphTiles.some(([tx, ty]) => tx === pTx && ty === pTy);
+      if (hit) {
+        player.takeDamage(this.attackDamage);
+        this.flashAttack();
+      }
+    } else {
+      const sameRow = myTy === pTy;
+      const sameCol = myTx === pTx;
+      const dist = sameRow ? Math.abs(myTx - pTx) : sameCol ? Math.abs(myTy - pTy) : Infinity;
+      if ((sameRow || sameCol) && dist > 0 && dist <= this.attackRange) {
+        this.throwRock(player, sameRow ? 'row' : 'col', myTx, myTy, pTx, pTy);
+      }
+    }
+  }
+
+  // 나무 막대기 청년 전용: 맞을 칸을 빨간색으로 미리 표시 (돌멩이 청년은 표시 안 함)
+  showTelegraph(tiles, duration) {
+    const g = this.scene.add.graphics();
+    g.fillStyle(0xff2222, 0.35);
+    g.lineStyle(2, 0xff2222, 0.9);
+    tiles.forEach(([tx, ty]) => {
+      g.fillRect(tx * TILE, ty * TILE, TILE, TILE);
+      g.strokeRect(tx * TILE, ty * TILE, TILE, TILE);
+    });
+    this.scene.time.delayedCall(duration, () => g.destroy());
   }
 
   flashAttack() {

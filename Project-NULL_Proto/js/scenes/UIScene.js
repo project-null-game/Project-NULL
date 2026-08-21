@@ -44,7 +44,7 @@ class UIScene extends Phaser.Scene {
 
   // ---------- 왼쪽 아래: 버전 표시 ----------
   buildVersionLabel(height) {
-    this.add.text(10, height - 8, 'Prototype V1.0.4', {
+    this.add.text(10, height - 8, 'Prototype V1.0.5', {
       fontFamily: 'sans-serif', fontSize: '12px', color: '#666666'
     }).setOrigin(0, 1).setScrollFactor(0).setDepth(200);
   }
