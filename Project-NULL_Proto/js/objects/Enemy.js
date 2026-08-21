@@ -22,11 +22,12 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.attackRange = type === 'stick' ? 1 : 5; // stick의 range는 "정면 거리 1칸" 기준
     this.attackDamage = type === 'stick' ? 8 : 5; // 공격력 하향
 
-    // 체력바 (월드 좌표에 붙어서 항상 머리 위에 표시)
+    // 체력바 (월드 좌표에 붙어서 항상 머리 위에 표시) - 기존보다 1칸 더 위로
     this.hpBarWidth = 28;
-    this.hpBarBg = scene.add.rectangle(this.x - this.hpBarWidth / 2, this.y - 10, this.hpBarWidth, 5, 0x330000)
+    this.hpBarOffsetY = 10 + TILE;
+    this.hpBarBg = scene.add.rectangle(this.x - this.hpBarWidth / 2, this.y - this.hpBarOffsetY, this.hpBarWidth, 5, 0x330000)
       .setOrigin(0, 0.5).setDepth(150);
-    this.hpBarFill = scene.add.rectangle(this.x - this.hpBarWidth / 2, this.y - 10, this.hpBarWidth, 5, 0xdd3333)
+    this.hpBarFill = scene.add.rectangle(this.x - this.hpBarWidth / 2, this.y - this.hpBarOffsetY, this.hpBarWidth, 5, 0xdd3333)
       .setOrigin(0, 0.5).setDepth(151);
 
     this.on('destroy', () => {
@@ -36,7 +37,7 @@ class Enemy extends Phaser.Physics.Arcade.Sprite {
   }
 
   updateHealthBar() {
-    const barY = this.y - 10;
+    const barY = this.y - this.hpBarOffsetY;
     this.hpBarBg.setPosition(this.x - this.hpBarWidth / 2, barY);
     this.hpBarFill.setPosition(this.x - this.hpBarWidth / 2, barY);
     const ratio = Math.max(0, this.health / this.maxHealth);

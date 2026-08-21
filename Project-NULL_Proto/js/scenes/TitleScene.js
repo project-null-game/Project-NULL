@@ -26,7 +26,7 @@ class TitleScene extends Phaser.Scene {
     }).setOrigin(0.5);
 
     // 왼쪽 아래 버전 표시
-    this.add.text(16, height - 16, 'Prototype V1.0.5', {
+    this.add.text(16, height - 16, 'Prototype V1.0.7', {
       fontFamily: 'sans-serif',
       fontSize: '13px',
       color: '#666666'

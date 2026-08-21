@@ -11,6 +11,15 @@ class BootScene extends Phaser.Scene {
     this.load.image('enemy_rock', 'assets/sprites/enemy_rock.png');         // 돌멩이 청년
     this.load.image('logo', 'assets/ui/logo.png');                          // 타이틀 로고
 
+    // 카다베르 연구소 배경 타일 (무료 SF 연구소 타일셋에서 추출)
+    this.load.image('lab_floor', 'assets/tiles/lab_floor.png');
+    this.load.image('lab_wall', 'assets/tiles/lab_wall.png');
+    this.load.image('lab_pod', 'assets/tiles/lab_pod.png');
+
+    // 공원(가는 길) 배경 타일 (무료 공원 타일셋에서 추출)
+    this.load.image('park_floor', 'assets/tiles/park_floor.png');
+    this.load.image('park_fountain', 'assets/tiles/park_fountain.png');
+
     this.loadFailed = false;
     this.load.on('loaderror', () => (this.loadFailed = true));
   }

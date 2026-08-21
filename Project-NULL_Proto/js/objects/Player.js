@@ -32,7 +32,7 @@ class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
 
     this.speed = 140; // (참고용, 실제 이동은 stepDuration 기준 트윈으로 처리)
-    this.stepDuration = 140; // 1칸 이동에 걸리는 시간(ms)
+    this.stepDuration = 190; // 1칸 이동에 걸리는 시간(ms) - 이속 하향
     this.isStepping = false;
     this.facing = 'down'; // up, down, left, right
     this.playerName = name;

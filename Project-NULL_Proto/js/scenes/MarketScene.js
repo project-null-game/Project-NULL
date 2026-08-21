@@ -10,16 +10,21 @@ class MarketScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#2a2620');
+    this.cameras.main.setBackgroundColor('#5a8f5c');
     this.physics.world.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
     this.cameras.main.setBounds(0, 0, MAP_SIZE, MAP_SIZE);
 
-    this.drawGridFloor();
+    this.drawParkFloor();
 
     // 플레이어는 맵 좌측에서 시작
     this.player = new Player(this, 200, MAP_SIZE / 2, 'player_cadaver', this.saveData.playerName);
     this.player.health = this.saveData.health;
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+
+    // 분수 장식 (경로 중간에 랜드마크로 배치)
+    if (this.textures.exists('park_fountain')) {
+      this.add.image(MAP_SIZE / 2, MAP_SIZE / 2, 'park_fountain').setDepth(2);
+    }
 
     // 적 배치 (베타: 임시로 몇 마리씩 흩뿌림 - 나중에 웨이브/구역 디자인으로 교체)
     this.enemies = this.physics.add.group();
@@ -66,6 +71,14 @@ class MarketScene extends Phaser.Scene {
     });
 
     this.physics.add.collider(this.player, this.walls);
+  }
+
+  drawParkFloor() {
+    if (!this.textures.exists('park_floor')) {
+      this.drawGridFloor();
+      return;
+    }
+    this.add.tileSprite(MAP_SIZE / 2, MAP_SIZE / 2, MAP_SIZE, MAP_SIZE, 'park_floor').setDepth(0);
   }
 
   drawGridFloor() {

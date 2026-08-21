@@ -15,15 +15,20 @@ class CadaverScene extends Phaser.Scene {
     this.physics.world.setBounds(0, 0, roomW, roomH);
     this.cameras.main.setBounds(0, 0, roomW, roomH);
 
-    // 임시 바닥 그리드 (실제 타일맵으로 나중에 교체)
-    this.drawGridFloor(roomW, roomH);
+    // 바닥/벽 타일 렌더링 (없으면 기존 그리드로 대체)
+    this.drawLabRoom(roomW, roomH);
 
     // 플레이어 생성
     this.player = new Player(this, roomW / 2, roomH / 2, 'player_cadaver', this.saveData.playerName);
     this.player.health = this.saveData.health;
     this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
 
-    // 출구 (화면 오른쪽 끝) - 밟으면 시장 씬으로 이동
+    // 스폰 지점에 캡슐(포드) 장식 - "여기서 깨어났다"는 느낌
+    if (this.textures.exists('lab_pod')) {
+      this.add.image(roomW / 2, roomH / 2 - TILE, 'lab_pod').setDepth(5);
+    }
+
+    // 출구 (화면 오른쪽 끝) - 밟으면 공원 씬으로 이동
     this.exitZone = this.add.zone(roomW - 20, roomH / 2, 40, 200);
     this.physics.add.existing(this.exitZone, true);
     this.physics.add.overlap(this.player, this.exitZone, () => this.goToMarket());
@@ -50,6 +55,26 @@ class CadaverScene extends Phaser.Scene {
     this.saveData.currentScene = 'CadaverScene';
     this.saveData.checkpoint = 'cadaver_start';
     SaveManager.save(this.saveData);
+  }
+
+  drawLabRoom(w, h) {
+    if (!this.textures.exists('lab_floor')) {
+      // 타일셋이 아직 없을 때의 폴백
+      this.drawGridFloor(w, h);
+      return;
+    }
+
+    // 바닥 타일 반복
+    this.add.tileSprite(w / 2, h / 2, w, h, 'lab_floor').setDepth(0);
+
+    // 테두리에 벽 패널 타일 (위/아래는 가로로, 좌/우는 세로로 회전해서 반복)
+    if (this.textures.exists('lab_wall')) {
+      const top = this.add.tileSprite(w / 2, TILE / 2, w, TILE, 'lab_wall').setDepth(1);
+      const bottom = this.add.tileSprite(w / 2, h - TILE / 2, w, TILE, 'lab_wall').setDepth(1);
+      bottom.setFlipY(true);
+      const left = this.add.tileSprite(TILE / 2, h / 2, TILE, h, 'lab_wall').setDepth(1).setAngle(90);
+      const right = this.add.tileSprite(w - TILE / 2, h / 2, TILE, h, 'lab_wall').setDepth(1).setAngle(-90);
+    }
   }
 
   drawGridFloor(w, h) {
