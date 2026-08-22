@@ -20,6 +20,16 @@ class BootScene extends Phaser.Scene {
     this.load.image('park_floor', 'assets/tiles/park_floor.png');
     this.load.image('park_fountain', 'assets/tiles/park_fountain.png');
 
+    // 소품 (충돌 장애물로 배치됨)
+    this.load.image('prop_lab_extinguisher', 'assets/tiles/prop_lab_extinguisher.png');
+    this.load.image('prop_lab_monitor', 'assets/tiles/prop_lab_monitor.png');
+    this.load.image('prop_lab_crate', 'assets/tiles/prop_lab_crate.png');
+    this.load.image('prop_lab_vent', 'assets/tiles/prop_lab_vent.png');
+    this.load.image('prop_lab_terminal', 'assets/tiles/prop_lab_terminal.png');
+    this.load.image('prop_park_tree', 'assets/tiles/prop_park_tree.png');
+    this.load.image('prop_park_bench', 'assets/tiles/prop_park_bench.png');
+    this.load.image('prop_park_lamp', 'assets/tiles/prop_park_lamp.png');
+
     this.loadFailed = false;
     this.load.on('loaderror', () => (this.loadFailed = true));
   }

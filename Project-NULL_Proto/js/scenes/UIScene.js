@@ -21,7 +21,6 @@ class UIScene extends Phaser.Scene {
     this.buildKeyboard();
     this.buildInGameLogo(width);
     this.buildVersionLabel(height);
-    this.buildExitArrow(width, height);
 
     // 플레이어 체력 변화 이벤트 구독
     const gameScene = this.scene.get(this.scene.manager.getScenes(true)
@@ -44,38 +43,9 @@ class UIScene extends Phaser.Scene {
 
   // ---------- 왼쪽 아래: 버전 표시 ----------
   buildVersionLabel(height) {
-    this.add.text(10, height - 8, 'Prototype V1.0.7', {
+    this.add.text(10, height - 8, 'Prototype V1.0.8', {
       fontFamily: 'sans-serif', fontSize: '12px', color: '#666666'
     }).setOrigin(0, 1).setScrollFactor(0).setDepth(200);
-  }
-
-  // ---------- 출구/도착지를 가리키는 빨간 화살표 ----------
-  buildExitArrow(width, height) {
-    if (this.targetX === undefined) return;
-
-    // 삼각형(위쪽을 향한 화살표)을 기준점(0,0)에 만들고, 매 프레임 회전/위치만 갱신
-    this.exitArrow = this.add.triangle(0, 0, 0, -12, -9, 9, 9, 9, 0xff2222)
-      .setScrollFactor(0).setDepth(210).setStrokeStyle(1, 0xffffff, 0.4);
-
-    this.arrowCenter = { x: width / 2, y: height / 2 + 10 };
-    this.arrowRadius = 100;
-  }
-
-  updateExitArrow() {
-    if (!this.exitArrow || !this.player) return;
-    const dx = this.targetX - this.player.x;
-    const dy = this.targetY - this.player.y;
-    const angle = Math.atan2(dy, dx);
-
-    const ax = this.arrowCenter.x + Math.cos(angle) * this.arrowRadius;
-    const ay = this.arrowCenter.y + Math.sin(angle) * this.arrowRadius;
-
-    this.exitArrow.setPosition(ax, ay);
-    this.exitArrow.setRotation(angle + Math.PI / 2); // 기본 도형이 위쪽을 향하므로 90도 보정
-  }
-
-  update() {
-    this.updateExitArrow();
   }
 
   // ---------- 왼쪽 위: 프로필 + 이름/체력 바 ----------

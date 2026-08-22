@@ -40,6 +40,9 @@ class CadaverScene extends Phaser.Scene {
     // 맵 경계 벽 (World bounds와 별개로 이중 안전장치) - 플레이어가 맵 밖으로 나가지 못하게 막음
     this.buildBoundaryWalls(roomW, roomH);
 
+    // 연구소 소품 배치 (충돌 장애물)
+    this.buildLabProps();
+
     // UI 오버레이 씬 실행
     this.scene.launch('UIScene', {
       player: this.player,
@@ -67,14 +70,47 @@ class CadaverScene extends Phaser.Scene {
     // 바닥 타일 반복
     this.add.tileSprite(w / 2, h / 2, w, h, 'lab_floor').setDepth(0);
 
-    // 테두리에 벽 패널 타일 (위/아래는 가로로, 좌/우는 세로로 회전해서 반복)
+    // 테두리에 벽 패널 타일 (좌/우는 회전하지 않고 세로로 그대로 반복 - 회전 시 위치가 깨지는 버그가 있었음)
     if (this.textures.exists('lab_wall')) {
       const top = this.add.tileSprite(w / 2, TILE / 2, w, TILE, 'lab_wall').setDepth(1);
       const bottom = this.add.tileSprite(w / 2, h - TILE / 2, w, TILE, 'lab_wall').setDepth(1);
       bottom.setFlipY(true);
-      const left = this.add.tileSprite(TILE / 2, h / 2, TILE, h, 'lab_wall').setDepth(1).setAngle(90);
-      const right = this.add.tileSprite(w - TILE / 2, h / 2, TILE, h, 'lab_wall').setDepth(1).setAngle(-90);
+      const left = this.add.tileSprite(TILE / 2, h / 2, TILE, h, 'lab_wall').setDepth(1);
+      const right = this.add.tileSprite(w - TILE / 2, h / 2, TILE, h, 'lab_wall').setDepth(1);
+      right.setFlipX(true);
     }
+  }
+
+  // 연구소 소품을 충돌 가능한 장애물로 배치 (플레이어가 통과 못 함)
+  buildLabProps() {
+    const propKeys = [
+      'prop_lab_extinguisher',
+      'prop_lab_monitor',
+      'prop_lab_crate',
+      'prop_lab_vent',
+      'prop_lab_terminal'
+    ];
+    if (!propKeys.some((k) => this.textures.exists(k))) return;
+
+    this.props = this.physics.add.staticGroup();
+
+    // 스폰(포드)/출구 통로를 피해서 방 안 곳곳에 배치
+    const placements = [
+      ['prop_lab_extinguisher', 100, 100],
+      ['prop_lab_monitor', 700, 110],
+      ['prop_lab_crate', 110, 500],
+      ['prop_lab_vent', 700, 500],
+      ['prop_lab_terminal', 140, 300]
+    ];
+
+    placements.forEach(([key, x, y]) => {
+      if (!this.textures.exists(key)) return;
+      const img = this.add.image(x, y, key).setDepth(3);
+      this.physics.add.existing(img, true);
+      this.props.add(img);
+    });
+
+    this.physics.add.collider(this.player, this.props);
   }
 
   drawGridFloor(w, h) {
